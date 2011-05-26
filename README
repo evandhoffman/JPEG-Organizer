@@ -1,5 +1,6 @@
 This is a utility I created to organize photos from my digital cameras
-into directories based on the date the picture was taken (as per the EXIF data).The metadata library is JpegMetadataReader, which apparently is now known as
+into directories based on the date the picture was taken (as per the EXIF data).
+The metadata library is JpegMetadataReader, which apparently is now known as
 metadata-extractor (http://code.google.com/p/metadata-extractor/).  It uses
 log4j for informational messages.
 
