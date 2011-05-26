@@ -1,0 +1,20 @@
+This is a utility I created to organize photos from my digital cameras
+into directories based on the date the picture was taken (as per the EXIF data).The metadata library is JpegMetadataReader, which apparently is now known as
+metadata-extractor (http://code.google.com/p/metadata-extractor/).  It uses
+log4j for informational messages.
+
+To run it, just feed it the source directory and the target directory.  It will
+recursively scan <source> for *.jpg/JPG/JPEG/jpeg files and move them to a 
+subdirectory of <target>.  If the photo was taken on Jan 4th, 2009 and the file
+is named IMG_0023.JPG, it will move the file to: 
+
+	<target>/2009/2009-01/2009-01-04/2009-01-04.IMG_0023.JPG
+
+This makes it easy to find photos taken on a specific date, whether or not you 
+use software like Picasa or iPhoto, and prevents having thousands of files in a
+single directory, which can be a huge pain.
+
+There's also a utility called AviOrganizer, which does essentially the same, 
+but for *.avi/*.mov, and rather than using EXIF data (which they don't have)
+it uses the file's modification time.
+
