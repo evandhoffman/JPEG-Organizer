@@ -8,6 +8,9 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -73,12 +76,25 @@ public abstract class FileOrganizer {
 		return list;
 	}
 
+	private void incrementMovedDirCount(File targetDir, Map<File,Integer> moveMap) {
+		if (moveMap.containsKey(targetDir)) {
+			Integer count = moveMap.get(targetDir);
+			moveMap.put(targetDir, ++count);
+		} else {
+			moveMap.put(targetDir, 1);
+		}
+
+	}
+
 	/**
 	 * Moves the files from their current location to the target locations
 	 * returned by {@link #getTargetDirForFile(File)}.
 	 * @param files
 	 */
 	protected void moveFiles(Iterable<File> files) {
+
+		TreeMap<File,Integer> movedToDirCount = new TreeMap<File,Integer>();
+
 		int filesMoved = 0;
 		int fileCollisions = 0;
 		int hashCollisions = 0;
@@ -103,30 +119,38 @@ public abstract class FileOrganizer {
 					} else {
 						targetFile = new File(targetDir,f.getName());
 					}
-					
+
 					if (renameOnCollision) {
 						if (targetFile.exists()) {
 							byte[] sourceHash = SHA1.getSHA1(f);
 							byte[] targetHash = SHA1.getSHA1(targetFile);
 							if (Arrays.equals(sourceHash, targetHash)) {
-								logger.info("Source and target files are the same (file: "+f.getName()+", hash: "+SHA1.byteArrayToHexString(sourceHash) +")");
+								logger.info("Source and target files are the same (file: "+f.getAbsolutePath()+", hash: "+SHA1.byteArrayToHexString(sourceHash) +")");
 								hashCollisions++;
 							} else {
 								String oldTargetFile = targetFile.getName();
 								targetFile = getValidFilename(targetFile, 100);
 								logger.warn("File "+oldTargetFile+" renamed to "+targetFile.getName() );
 								fileCollisions++;
-								
+
 								if (!f.renameTo(targetFile)) {
 									throw new RuntimeException("Unable to move "+f+" to "+targetFile);
 								} else {
 									filesMoved++;
+									incrementMovedDirCount(targetDir,movedToDirCount);
 								}
 
 							}
+						} else {
+							if (!f.renameTo(targetFile)) {
+								throw new RuntimeException("Unable to move "+f+" to "+targetFile);
+							} else {
+								filesMoved++;
+								incrementMovedDirCount(targetDir,movedToDirCount);
+							}
 						}
 						//		logger.debug("Moved "+f.getName()+" to "+targetFile.getAbsolutePath());
-						
+
 					} else {
 						if (targetFile.exists()) {
 							logger.error("Attempting to move "+f+" to "+targetFile+", but target already exists!  Source size: "+f.length()+", target size: "+targetFile.length());
@@ -146,6 +170,12 @@ public abstract class FileOrganizer {
 
 			logger.info("Successfully moved "+filesMoved+" files, "+hashCollisions+" files already existed (matching SHA-1 hashes), "+fileCollisions+" files " +
 			" had conflicting names and were renamed."); 
+			
+			// Print out dirs + file counts
+			for (Entry<File,Integer> entry : movedToDirCount.entrySet()) {
+				logger.debug("Moved "+entry.getValue()+" files to directory: "+entry.getKey().getAbsolutePath());
+			}
+			
 		} catch (FileNotFoundException fe) {
 			logger.error("File not found exception: "+fe.getLocalizedMessage(),fe);
 			throw new RuntimeException(fe);
